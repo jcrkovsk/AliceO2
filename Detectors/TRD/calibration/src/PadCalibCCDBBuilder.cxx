@@ -32,7 +32,6 @@
 // int NROWC0 = 12;
 // int NROWC1 = 16;
 
-
 using namespace o2::trd::constants;
 
 ClassImp(o2::trd::PadCalibCCDBBuilder);
@@ -41,7 +40,7 @@ namespace o2::trd
 {
 
 void PadCalibCCDBBuilder::CheckIfIsolatedHotPadCandidate(TH2F* hDet, std::vector<int> coordinates, float upperLimit, int areaContainedWithin)
-{ 
+{
   if ((int)coordinates.size() != 4) {
     std::cerr << "Invalid size of the coordinates vector!" << std::endl;
     return;
@@ -137,7 +136,7 @@ float PadCalibCCDBBuilder::ComputeDetectorAverage(TH2F* hDet)
   int nBinsUsed = 0;
   for (int irow = 0; irow < hDet->GetNbinsY(); irow++) {
     for (int icol = 0; icol < hDet->GetNbinsX(); icol++) {
-      float currentGain = TMath::Abs( hDet->GetBinContent(icol+1, irow+1) );
+      float currentGain = TMath::Abs(hDet->GetBinContent(icol + 1, irow + 1));
       if (currentGain == 0)
         continue;
       average += currentGain;
@@ -195,12 +194,12 @@ TH2F* PadCalibCCDBBuilder::CreateNormalizedMap(TH2F* hDet, TString sNewName)
 void PadCalibCCDBBuilder::FillInTheGap(TH2F* hDet, int column, int row, float newGain)
 { // takes hDet and replaces content of bin (column,row) with gain
   // CHANGES THE TH2 GIVEN IN ARGUMENT!
-  float currentGain = hDet->GetBinContent(column+1, row+1);
+  float currentGain = hDet->GetBinContent(column + 1, row + 1);
   // float currentGain = hDet->GetBinContent(hDet->GetXaxis()->FindBin(column), hDet->GetYaxis()->FindBin(row));
   if (currentGain != 0)
     return; // make sure we don't replace gain, just fill in gaps
   float factor = 1;
-  hDet->SetBinContent(column+1, row+1, factor*newGain);
+  hDet->SetBinContent(column + 1, row + 1, factor * newGain);
   // hDet->SetBinContent(hDet->GetXaxis()->FindBin(column), hDet->GetYaxis()->FindBin(row), factor*newGain);
 }
 
@@ -228,46 +227,51 @@ TH2F* PadCalibCCDBBuilder::FillTheMap(TH2F* hDet, TString sNewName, int nbuffer)
   int lastFilledX = hDetFilled->FindLastBinAbove();
   int nBinsX = hDetFilled->GetNbinsX();
 
-  int firstFilledY = hDetFilled->FindFirstBinAbove(0,2);
-  int lastFilledY = hDetFilled->FindLastBinAbove(0,2);
+  int firstFilledY = hDetFilled->FindFirstBinAbove(0, 2);
+  int lastFilledY = hDetFilled->FindLastBinAbove(0, 2);
   int nBinsY = hDetFilled->GetNbinsY();
 
   while (nEmptyBins != 0) {
-    if( (firstFilledX > nBinsX/2 || lastFilledX <= nBinsX/2) && (firstFilledY == 1 && lastFilledY ==  nBinsY) ) {
+    if ((firstFilledX > nBinsX / 2 || lastFilledX <= nBinsX / 2) && (firstFilledY == 1 && lastFilledY == nBinsY)) {
       // for when half of a chamber along X axis is empty
       // then mirror along the X axis
       // use the average over neighbors if the mirrored cell is empty
       // !!! TODO! Change FindEMpty to deal with bin coordinates rather than with col/row
       // !!! TODO! and here change accordingly!
       for (int ibin = 0; ibin < nEmptyBins; ibin++) {
-        int flippedCoordinate = nBinsX - hDetFilled->GetXaxis()->FindBin(emptyBinsColRow[ibin][0])+1;
-        float mirroredGain = hDetFilled->GetBinContent( flippedCoordinate, hDetFilled->GetYaxis()->FindBin(emptyBinsColRow[ibin][1]) );
+        int flippedCoordinate = nBinsX - hDetFilled->GetXaxis()->FindBin(emptyBinsColRow[ibin][0]) + 1;
+        float mirroredGain = hDetFilled->GetBinContent(flippedCoordinate, hDetFilled->GetYaxis()->FindBin(emptyBinsColRow[ibin][1]));
         // if mirror is an empty cell -> use the neighbours of the original cell instead
-        if(mirroredGain==0) mirroredGain = GetAverageFromNeighbors(hDetTemp, emptyBinsColRow[ibin][0], emptyBinsColRow[ibin][1], nbuffer);
+        if (mirroredGain == 0)
+          mirroredGain = GetAverageFromNeighbors(hDetTemp, emptyBinsColRow[ibin][0], emptyBinsColRow[ibin][1], nbuffer);
         float factor = -1;
-        if( mirroredGain < 0 ) factor = 1;
-        FillInTheGap(hDetFilled, emptyBinsColRow[ibin][0], emptyBinsColRow[ibin][1], factor* mirroredGain);
-      }  
-    } else if ( (firstFilledY > nBinsY/2 || lastFilledY < nBinsY/2) && (firstFilledX ==1 && lastFilledX == nBinsX) ) {
+        if (mirroredGain < 0)
+          factor = 1;
+        FillInTheGap(hDetFilled, emptyBinsColRow[ibin][0], emptyBinsColRow[ibin][1], factor * mirroredGain);
+      }
+    } else if ((firstFilledY > nBinsY / 2 || lastFilledY < nBinsY / 2) && (firstFilledX == 1 && lastFilledX == nBinsX)) {
       // for when half of a chamber along Y axis is empty
       // then mirror along the Y axis
       // use the average over neighbors if the mirrored cell is empty
       // TODO is ever the case tho?
       for (int ibin = 0; ibin < nEmptyBins; ibin++) {
         int flippedCoordinate = nBinsY - hDetFilled->GetYaxis()->FindBin(emptyBinsColRow[ibin][1]);
-        float mirroredGain = hDetFilled->GetBinContent( hDetFilled->GetXaxis()->FindBin(emptyBinsColRow[ibin][0]), flippedCoordinate);
+        float mirroredGain = hDetFilled->GetBinContent(hDetFilled->GetXaxis()->FindBin(emptyBinsColRow[ibin][0]), flippedCoordinate);
         // if mirror is an empty cell -> use the neighbours of the original cell instead
-        if(mirroredGain==0) mirroredGain = GetAverageFromNeighbors(hDetTemp, emptyBinsColRow[ibin][0], emptyBinsColRow[ibin][1], nbuffer);
+        if (mirroredGain == 0)
+          mirroredGain = GetAverageFromNeighbors(hDetTemp, emptyBinsColRow[ibin][0], emptyBinsColRow[ibin][1], nbuffer);
         float factor = -1;
-        if( mirroredGain < 0 ) factor = 1;
-        FillInTheGap(hDetFilled, emptyBinsColRow[ibin][0], emptyBinsColRow[ibin][1], factor* mirroredGain);
-      } 
+        if (mirroredGain < 0)
+          factor = 1;
+        FillInTheGap(hDetFilled, emptyBinsColRow[ibin][0], emptyBinsColRow[ibin][1], factor * mirroredGain);
+      }
     } else {
       for (int ibin = 0; ibin < nEmptyBins; ibin++) {
         float averageGain = GetAverageFromNeighbors(hDetTemp, emptyBinsColRow[ibin][0], emptyBinsColRow[ibin][1], nbuffer);
         float factor = -1;
-        if( averageGain < 0 ) factor = 1;
-        FillInTheGap(hDetFilled, emptyBinsColRow[ibin][0], emptyBinsColRow[ibin][1], factor* averageGain);
+        if (averageGain < 0)
+          factor = 1;
+        FillInTheGap(hDetFilled, emptyBinsColRow[ibin][0], emptyBinsColRow[ibin][1], factor * averageGain);
       }
     }
     //
@@ -286,7 +290,7 @@ std::vector<std::vector<int>> PadCalibCCDBBuilder::FindEmpty(TH2F* hDetectorMap)
 
   for (int irow = 0; irow < hDetectorMap->GetNbinsY(); irow++) {
     for (int icolumn = 0; icolumn < hDetectorMap->GetNbinsX(); icolumn++) {
-      float gain = hDetectorMap->GetBinContent(icolumn+1, irow+1);
+      float gain = hDetectorMap->GetBinContent(icolumn + 1, irow + 1);
       if (gain == 0) {
         std::vector<int> coordinates; // todo fixed length and then set col/row as std::vector[0/1] = xx?
         coordinates.push_back(icolumn);
@@ -359,7 +363,7 @@ float PadCalibCCDBBuilder::GetAverageFromNeighbors(TH2F* hDet, int column, int r
       int colNeighbor = (column - offset) + icol;
       if (colNeighbor < 0 || colNeighbor >= hDet->GetNbinsX())
         continue; // avoids under and overflow
-      float tempGain = TMath::Abs( hDet->GetBinContent(hDet->GetXaxis()->FindBin(colNeighbor), hDet->GetYaxis()->FindBin(rowNeighbor)) );
+      float tempGain = TMath::Abs(hDet->GetBinContent(hDet->GetXaxis()->FindBin(colNeighbor), hDet->GetYaxis()->FindBin(rowNeighbor)));
       if (tempGain <= 0)
         continue; // exclude empty/negative bins
       gainNeighbor.push_back(tempGain);
@@ -394,7 +398,8 @@ TH2F* PadCalibCCDBBuilder::GetDetectorMap(TTree* tree, int nDet, float mingain, 
     tree->GetEntry(ientry);
     if ((int)det != nDet)
       continue;
-    if (chi <= 0.5 || amp <= 0 || sgm <= 0 || sgm > 1000 ) continue; // TODO add setters to change cuts
+    if (chi <= 0.5 || amp <= 0 || sgm <= 0 || sgm > 1000)
+      continue; // TODO add setters to change cuts
     if (adc < mingain || adc > maxgain)
       continue;
     hDetector->SetBinContent(hDetector->GetXaxis()->FindBin(col), hDetector->GetYaxis()->FindBin(row), adc);
@@ -407,17 +412,17 @@ bool PadCalibCCDBBuilder::IsHotAreaIsolated(TH2F* hDet, int column, int row, int
   bool isIsolated = kFALSE;
   float averageGain = ComputeDetectorAverage(hDet);
   int nSurroundingNotHot = 0;
-  int nMaxHot = TMath::Power( matrixSize+2, 2) - TMath::Power( matrixSize, 2);
+  int nMaxHot = TMath::Power(matrixSize + 2, 2) - TMath::Power(matrixSize, 2);
   float averageAround = 0.;
   int nUsedBins = 0;
 
   int nHotOffset = 0; // offsets the nMaxHot criterion for cells at edges
-  if( ( column == 1 || column == hDet->GetNbinsX() ) && row > 1 && row < hDet->GetNbinsY() ) {
+  if ((column == 1 || column == hDet->GetNbinsX()) && row > 1 && row < hDet->GetNbinsY()) {
     nHotOffset = matrixSize + 2;
-  } else if ( ( row == 1 || row == hDet->GetNbinsY() ) && column > 1 && column < hDet->GetNbinsX() ) {
+  } else if ((row == 1 || row == hDet->GetNbinsY()) && column > 1 && column < hDet->GetNbinsX()) {
     nHotOffset = matrixSize + 2;
-  } else if ( ( column == 1 || column == hDet->GetNbinsX() ) && ( row == 1 || row == hDet->GetNbinsY() ) ) {
-    nHotOffset = nMaxHot/2 + 1;
+  } else if ((column == 1 || column == hDet->GetNbinsX()) && (row == 1 || row == hDet->GetNbinsY())) {
+    nHotOffset = nMaxHot / 2 + 1;
   }
 
   for (int i = 0; i < matrixSize + 2; i++) {
@@ -425,7 +430,7 @@ bool PadCalibCCDBBuilder::IsHotAreaIsolated(TH2F* hDet, int column, int row, int
     for (int j = 0; j < matrixSize + 2; j++) {
       int jrow = j - 1;
       if ((-1 < icol) && (icol < matrixSize) && (-1 < jrow) && (jrow < matrixSize))
-      // if ((abs(icol) <= (int)(matrixSize - 1) / 2) && (abs(jrow) <= (int)(matrixSize - 1) / 2))
+        // if ((abs(icol) <= (int)(matrixSize - 1) / 2) && (abs(jrow) <= (int)(matrixSize - 1) / 2))
         continue;
       float temp = TMath::Abs(hDet->GetBinContent(column + icol, row + jrow));
       if (temp != 0) {
@@ -437,8 +442,9 @@ bool PadCalibCCDBBuilder::IsHotAreaIsolated(TH2F* hDet, int column, int row, int
     }
   }
 
-  if (nUsedBins > 0) averageAround /= nUsedBins;
-  if (averageAround < 2 * averageGain && nSurroundingNotHot <= nHotOffset ) { //<= nMaxHot){ 
+  if (nUsedBins > 0)
+    averageAround /= nUsedBins;
+  if (averageAround < 2 * averageGain && nSurroundingNotHot <= nHotOffset) { //<= nMaxHot){
     isIsolated = kTRUE;
   } else if (nSurroundingNotHot == nMaxHot) {
     isIsolated = kTRUE;
@@ -464,45 +470,43 @@ void PadCalibCCDBBuilder::PopulateEmptyNormalizedMap(TH2F* hDet, float valueToSe
 { // sets all cells in an empty normalized map to a given value
   // by default all cells set to -1
 
-  if( !hDet || hDet->GetEntries() != 0 ) {
+  if (!hDet || hDet->GetEntries() != 0) {
     std::cout << "Histogram does not exist or is not empty!";
     return;
   }
-  for(int icol = 0; icol < hDet->GetNbinsX(); icol++) {
-    for(int irow = 0; irow < hDet->GetNbinsY(); irow++) {
-      hDet->SetBinContent(icol+1, irow+1, valueToSet);
+  for (int icol = 0; icol < hDet->GetNbinsX(); icol++) {
+    for (int irow = 0; irow < hDet->GetNbinsY(); irow++) {
+      hDet->SetBinContent(icol + 1, irow + 1, valueToSet);
     }
   }
-
 }
 
 void PadCalibCCDBBuilder::RemoveEdges(TH2F* hDet, int nsize)
 { // sets all cells in edges (along Y) of custom size (default size 2 columns) to 0
-  if( !hDet || hDet->GetEntries() == 0 ) 
+  if (!hDet || hDet->GetEntries() == 0)
     return;
-  for(int icol = 0; icol < nsize; icol++ ) {
-    for(int irow = 0; irow < hDet->GetNbinsY(); irow++ ) {
-      hDet->SetBinContent( icol+1, irow+1, 0);
-      hDet->SetBinContent( hDet->GetNbinsX()-icol, irow, 0);
+  for (int icol = 0; icol < nsize; icol++) {
+    for (int irow = 0; irow < hDet->GetNbinsY(); irow++) {
+      hDet->SetBinContent(icol + 1, irow + 1, 0);
+      hDet->SetBinContent(hDet->GetNbinsX() - icol, irow, 0);
     }
   }
 }
 
 void PadCalibCCDBBuilder::RemoveExtremePads(TH2F* hDet, float upperLimit, float lowerLimit)
 { // sets very hot (> 2*average) and very cold (< average/2) cells to 0
-  if( !hDet || hDet->GetEntries() == 0 ) 
+  if (!hDet || hDet->GetEntries() == 0)
     return;
   float average = ComputeDetectorAverage(hDet);
 
-  for(int irow=0; irow < hDet->GetNbinsY(); irow++ ) {
-    for(int icol=0; icol < hDet->GetNbinsX(); icol++ ) {
-      float value = hDet->GetBinContent(icol+1, irow+1);
-      if( value > upperLimit * average || value < lowerLimit * average ) {
-        hDet->SetBinContent(icol+1, irow+1, 0);
+  for (int irow = 0; irow < hDet->GetNbinsY(); irow++) {
+    for (int icol = 0; icol < hDet->GetNbinsX(); icol++) {
+      float value = hDet->GetBinContent(icol + 1, irow + 1);
+      if (value > upperLimit * average || value < lowerLimit * average) {
+        hDet->SetBinContent(icol + 1, irow + 1, 0);
       }
     }
   }
-
 }
 
 void PadCalibCCDBBuilder::ReplacePadCloserToCenter(TH2F* hDet, int xcloser, int ycloser)
@@ -551,9 +555,10 @@ void PadCalibCCDBBuilder::SmoothenTheDetector(TH2F* hDet, float allowedDifferenc
 
 TH2F* PadCalibCCDBBuilder::TransformMapIntoAbsoluteValues(TH2F* hDet, TString sName)
 {
-  if( !hDet || hDet->GetEntries() == 0 ) return 0;
+  if (!hDet || hDet->GetEntries() == 0)
+    return 0;
   // set a name for the new histo
-  if( sName == "" ) {
+  if (sName == "") {
     sName = hDet->GetName();
     sName += "_transformed";
   }
@@ -563,9 +568,9 @@ TH2F* PadCalibCCDBBuilder::TransformMapIntoAbsoluteValues(TH2F* hDet, TString sN
 
   TH2F* hDetCopy = new TH2F(sName.Data(), sName.Data(), nCols, 0, nCols, nRows, 0, nRows);
 
-  for(int icol = 0; icol < nCols; icol++ ) {
-    for(int irow = 0; irow < nRows; irow++) {
-      hDetCopy->SetBinContent(icol+1, irow+1, TMath::Abs( hDet->GetBinContent(icol+1, irow+1) ));
+  for (int icol = 0; icol < nCols; icol++) {
+    for (int irow = 0; irow < nRows; irow++) {
+      hDetCopy->SetBinContent(icol + 1, irow + 1, TMath::Abs(hDet->GetBinContent(icol + 1, irow + 1)));
     }
   }
 
