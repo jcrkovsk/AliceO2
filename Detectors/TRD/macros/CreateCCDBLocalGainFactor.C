@@ -15,11 +15,11 @@ void CreateCCDBLocalGainFactor(TString sOpenFile)
   LocalGainFactor calObject;
 
   for (int idet = 0; idet < 540; idet++) {
-    TH2F* hDetDef = krCalibToCCDB->GetDetectorMap(tree, idet);
-    krCalibToCCDB->SmoothenTheDetector(hDetDef);
-    TH2F* hDetFilled = krCalibToCCDB->FillTheMap(hDetDef);
+    TH2F* hDetDef = krCalibToCCDB->getDetectorMap(tree, idet);
+    krCalibToCCDB->smoothenTheDetector(hDetDef);
+    TH2F* hDetFilled = krCalibToCCDB->fillTheMap(hDetDef);
     delete hDetDef;
-    TH2F* hDet = krCalibToCCDB->CreateNormalizedMap(hDetFilled);
+    TH2F* hDet = krCalibToCCDB->createNormalizedMap(hDetFilled);
     delete hDetFilled;
     for (int irow = 0; irow < hDet->GetNbinsY(); irow++) {
       for (int icol = 0; icol < hDet->GetNbinsX(); icol++) {

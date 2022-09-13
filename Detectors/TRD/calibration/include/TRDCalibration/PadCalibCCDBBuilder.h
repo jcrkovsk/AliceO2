@@ -32,44 +32,40 @@ namespace trd
 class PadCalibCCDBBuilder
 {
  public:
-  PadCalibCCDBBuilder(){};
-  ~PadCalibCCDBBuilder(){};
+  PadCalibCCDBBuilder() = default;
+  ~PadCalibCCDBBuilder() = default;
 
-  void CheckIfIsolatedHotPadCandidate(TH2F* hDet, std::vector<int> coordinates, float upperLimit = 1.5, int areaContainedWithin = 4);
-  void CheckIfSmallerCloserToCenter(TH2F* hDet, std::vector<int> coordinates, float allowedDifference);
-  std::vector<int> CompareGain(TH2F* hDet, int column, int row, int shiftcolumn, int shiftrow, float allowedDifference);
-  float ComputeDetectorAverage(TH2F* hDet);
-  float ComputeDistance(std::vector<float> pad1, std::vector<float> pad2);
-  TH2F* CreateNormalizedMap(TH2F* hDet, TString sNewName = "");
-  void FillInTheGap(TH2F* hDet, int column, int row, float newGain);
-  TH2F* FillTheMap(TH2F* hDet, TString sNewName = "", int nbuffer = 3);
-  //////////////////////////////////
-  TH2F* FillTheMapMirror(TH2F* hDet, TString sNewName = "", int nbuffer = 3);
-  TH2F* FillTheMapAverage(TH2F* hDet, TString sNewName = "", int nbuffer = 3);
-  //////////////////////////////////
-  std::vector<std::vector<int>> FindEmpty(TH2F* hDetectorMap);
-  std::vector<std::vector<int>> FindInhomogeneities(TH2F* hDet, float allowedDifference);
-  float GetAverageFromNeighbors(TH2F* hDet, int column, int row, int nbuffer = 3);
-  TH2F* GetDetectorMap(TTree* tree, int nDet, float mingain = 0, float maxgain = 10'000, TString sDetName = "");
-  bool IsHotAreaIsolated(TH2F* hDet, int column, int row, int matrixSize = 1);
-  int IsolatedHotPadsContainmentSize(TH2F* hDet, int column, int row);
-  void PopulateEmptyNormalizedMap(TH2F* hDet, float valueToSet = -1);
-  void RemoveEdges(TH2F* hDet, int nsize = 2);
-  void RemoveExtremePads(TH2F* hDet, float upperLimit = 2., float lowerLimit = 0.5);
-  void ReplacePadCloserToCenter(TH2F* hDet, int column, int row);
-  void ReplaceIsolatedHotPads(TH2F* hDet, int column, int row, int nsize);
-  void SetTreeBranches(TTree* tree);
-  void SmoothenTheDetector(TH2F* hDet, float allowedDifference = 1000);
-  TH2F* TransformMapIntoAbsoluteValues(TH2F* hDet, TString sName = "");
+  void checkIfIsolatedHotPadCandidate(TH2F* hDet, std::vector<int> coordinates, float upperLimit = 1.5, int areaContainedWithin = 4);
+  void checkIfSmallerCloserToCenter(TH2F* hDet, std::vector<int> coordinates, float allowedDifference);
+  std::vector<int> compareGain(TH2F* hDet, int column, int row, int shiftcolumn, int shiftrow, float allowedDifference);
+  float computeDetectorAverage(TH2F* hDet);
+  float computeDistance(std::vector<float> pad1, std::vector<float> pad2);
+  TH2F* createNormalizedMap(TH2F* hDet, TString sNewName = "");
+  void fillInTheGap(TH2F* hDet, int column, int row, float newGain);
+  TH2F* fillTheMap(TH2F* hDet, TString sNewName = "", int nbuffer = 3);
+  std::vector<std::vector<int>> findEmpty(TH2F* hDetectorMap);
+  std::vector<std::vector<int>> findInhomogeneities(TH2F* hDet, float allowedDifference);
+  float getAverageFromNeighbors(TH2F* hDet, int column, int row, int nbuffer = 3);
+  TH2F* getDetectorMap(TTree* tree, int nDet, float mingain = 0, float maxgain = 10'000, TString sDetName = "");
+  bool isHotAreaIsolated(TH2F* hDet, int column, int row, int matrixSize = 1);
+  int isolatedHotPadsContainmentSize(TH2F* hDet, int column, int row);
+  void populateEmptyNormalizedMap(TH2F* hDet, float valueToSet = -1);
+  void removeEdges(TH2F* hDet, int nsize = 2);
+  void removeExtremePads(TH2F* hDet, float upperLimit = 2., float lowerLimit = 0.5);
+  void replacePadCloserToCenter(TH2F* hDet, int column, int row);
+  void replaceIsolatedHotPads(TH2F* hDet, int column, int row, int nsize);
+  void setTreeBranches(TTree* tree);
+  void smoothenTheDetector(TH2F* hDet, float allowedDifference = 1000);
+  TH2F* transformMapIntoAbsoluteValues(TH2F* hDet, TString sName = "");
 
  private:
-  float det;
-  float col;
-  float row;
-  float adc;
-  float chi;
-  float sgm;
-  float amp;
+  float mDet;
+  float mCol;
+  float mRow;
+  float mAdc;
+  float mChi;
+  float mSgm;
+  float mAmp;
 
   ClassDefNV(PadCalibCCDBBuilder, 1);
 };
