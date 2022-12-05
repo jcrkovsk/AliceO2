@@ -14,7 +14,7 @@ void CreateCCDBLocalGainFactor(TString sOpenFile)
   TTree* tree = (TTree*)file->Get("nt_Krypton");
   LocalGainFactor calObject;
 
-  for (int idet = 0; idet < 540; idet++) {
+  for (int idet = 0; idet < 1 /*constants::MAXCHAMBER*/; idet++) {
     TH2F* hDetDef = krCalibToCCDB->getDetectorMap(tree, idet);
     krCalibToCCDB->smoothenTheDetector(hDetDef);
     TH2F* hDetFilled = krCalibToCCDB->fillTheMap(hDetDef);
@@ -27,7 +27,16 @@ void CreateCCDBLocalGainFactor(TString sOpenFile)
         calObject.setPadValue(idet, icol, irow, relativeGain);
       }
     }
+    delete hDet;
+    cout << idet << endl;
   }
+
+  delete tree;
+  delete file;
+
+  cout << calObject.getValue(0, 52, 13) << endl;
+
+  return;
 
   /// write map to CCDB
   o2::ccdb::CcdbApi ccdb;

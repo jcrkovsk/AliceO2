@@ -31,7 +31,8 @@ namespace o2::trd
 
 void PadCalibCCDBBuilder::checkIfIsolatedHotPadCandidate(TH2F* hDet, std::vector<int> coordinates, float upperLimit, int areaContainedWithin)
 {
-  if ((int)coordinates.size() != 4) {
+  auto numberOfCoordinates = coordinates.size();
+  if (numberOfCoordinates != 4) {
     std::cerr << "Invalid size of the coordinates vector!" << std::endl;
     return;
   }
@@ -142,12 +143,13 @@ float PadCalibCCDBBuilder::computeDistance(std::vector<float> pad1, std::vector<
 {
   float distance = -1.;
 
-  if (pad1.size() != pad2.size()) {
+  auto numberOfCoordinates = pad1.size();
+  if (numberOfCoordinates != pad2.size()) {
     std::cerr << "Something fishy with the pad coordinates!" << std::endl;
     return distance;
   }
 
-  for (int i = 0; i < (int)pad1.size(); i++) {
+  for (int i = 0; i < numberOfCoordinates; i++) {
     distance += TMath::Power(pad1[i] - pad2[i], 2);
   }
   distance = TMath::Sqrt(distance);
@@ -164,9 +166,6 @@ TH2F* PadCalibCCDBBuilder::createNormalizedMap(TH2F* hDet, TString sNewName)
     sNewName += "_normalized";
   }
   TH2F* hDetNormalized = (TH2F*)hDet->Clone(sNewName.Data());
-
-  if (!hDet || hDet->GetEntries() == 0)
-    return hDetNormalized;
 
   float average = computeDetectorAverage(hDet);
 
@@ -203,15 +202,12 @@ TH2F* PadCalibCCDBBuilder::fillTheMap(TH2F* hDet, TString sNewName, int nbuffer)
   }
   TH2F* hDetFilled = (TH2F*)hDet->Clone(sNewName);
 
-  if (!hDet || hDet->GetEntries() == 0)
-    return hDetFilled;
-
   TH2F* hDetTemp = (TH2F*)hDet->Clone("hDetTemp"); // use as intermediate det in the filling process
   // find empty bins
   std::vector<std::vector<int>> emptyBinsColRow = findEmpty(hDetTemp);
   // loop over empty bins of th clone and fill them with the average gain
   // calculated from the gain in neighboring bins in the "Temp" map
-  int nEmptyBins = emptyBinsColRow.size();
+  auto nEmptyBins = emptyBinsColRow.size();
 
   int firstFilledX = hDetFilled->FindFirstBinAbove();
   int lastFilledX = hDetFilled->FindLastBinAbove();
@@ -243,7 +239,7 @@ TH2F* PadCalibCCDBBuilder::fillTheMap(TH2F* hDet, TString sNewName, int nbuffer)
       fillInTheGap(hDetFilled, emptyBinsColRow[ibin][0], emptyBinsColRow[ibin][1], factor * mirroredGain);
     }
     //
-    int nEmptyPrevious = emptyBinsColRow.size();
+    auto nEmptyPrevious = emptyBinsColRow.size();
     emptyBinsColRow.clear();
     hDetTemp = (TH2F*)hDetFilled->Clone("hDetTemp");
     emptyBinsColRow = findEmpty(hDetTemp);
@@ -251,6 +247,8 @@ TH2F* PadCalibCCDBBuilder::fillTheMap(TH2F* hDet, TString sNewName, int nbuffer)
     if (nEmptyPrevious == nEmptyBins)
       break; // will break out of the loop if no more empty pads can be filled
   } // will continue the loop till all bins are filled
+
+  delete hDetTemp;
 
   return hDetFilled;
 }
@@ -340,7 +338,7 @@ float PadCalibCCDBBuilder::getAverageFromNeighbors(TH2F* hDet, int column, int r
       gainNeighbor.push_back(tempGain);
     }
   }
-  int numberOfNeighbors = (int)gainNeighbor.size();
+  auto numberOfNeighbors = gainNeighbor.size();
   if (numberOfNeighbors < 1)
     return 0; // if empty, return 0
 
@@ -369,8 +367,10 @@ TH2F* PadCalibCCDBBuilder::getDetectorMap(TTree* tree, int nDet, float mingain, 
     tree->GetEntry(ientry);
     if ((int)mDet != nDet)
       continue;
-    if (mChi <= 0.5 || mAmp <= 0 || mSgm <= 0 || mSgm > 1000)
+    if (mChi < mChiMin || mAmp <= 0 || mSgm <= 0 || mSgm > 1000)
       continue; // TODO add setters to change cuts
+    if (mChiMax < mChiMin && mChi > mChiMax)
+      continue;
     if (mAdc < mingain || mAdc > maxgain)
       continue;
     hDetector->SetBinContent(hDetector->GetXaxis()->FindBin(mCol), hDetector->GetYaxis()->FindBin(mRow), mAdc);
@@ -514,10 +514,11 @@ void PadCalibCCDBBuilder::setTreeBranches(TTree* tree)
 void PadCalibCCDBBuilder::smoothenTheDetector(TH2F* hDet, float allowedDifference)
 {
   std::vector<std::vector<int>> SuspiciousBinPairs = findInhomogeneities(hDet, allowedDifference);
-  if (SuspiciousBinPairs.size() == 0)
+  auto numberOfPairs = SuspiciousBinPairs.size();
+  if (numberOfPairs == 0)
     return;
 
-  for (int i = 0; i < (int)SuspiciousBinPairs.size(); i++) {
+  for (int i = 0; i < numberOfPairs; i++) {
     std::vector<int> susPair = SuspiciousBinPairs[i];
     checkIfIsolatedHotPadCandidate(hDet, susPair);
     checkIfSmallerCloserToCenter(hDet, susPair, allowedDifference);
